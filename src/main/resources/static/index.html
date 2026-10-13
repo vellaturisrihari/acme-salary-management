@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en" ng-app="acmeSalaryApp">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="ACME employee salary management">
+    <title>ACME | People &amp; pay</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/styles.css" rel="stylesheet">
+</head>
+<body ng-controller="SalaryController as vm" ng-cloak>
+    <header class="topbar">
+        <div class="container-fluid page-shell d-flex align-items-center justify-content-between">
+            <a class="brand" href="/" aria-label="ACME People home">
+                <span class="brand-mark">A</span>
+                <span>acme<span class="brand-muted"> / people</span></span>
+            </a>
+            <div class="user-chip"><span class="user-avatar">HR</span><span>HR manager</span></div>
+        </div>
+    </header>
+
+    <main class="container-fluid page-shell py-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+            <div>
+                <div class="eyebrow">PEOPLE OPERATIONS</div>
+                <h1 class="page-title mb-1">People &amp; pay</h1>
+                <p class="text-secondary mb-0">A clear view of your global salary records.</p>
+            </div>
+            <button class="btn btn-primary px-4" type="button" ng-click="vm.openCreate()">
+                <span aria-hidden="true">＋</span> Add employee
+            </button>
+        </div>
+
+        <div class="alert alert-danger" role="alert" ng-if="vm.error">{{vm.error}}</div>
+        <div class="alert alert-success" role="status" ng-if="vm.notice">{{vm.notice}}</div>
+
+        <section class="summary-grid mb-4" aria-label="Salary overview">
+            <article class="summary-card">
+                <div class="summary-label">PEOPLE</div>
+                <div class="summary-value">{{vm.dashboard.employeeCount | number}}</div>
+                <div class="summary-note">active salary records</div>
+            </article>
+            <article class="summary-card payroll-card" ng-repeat="group in vm.dashboard.payrollByCurrency track by group.currency">
+                <div class="summary-label">ANNUAL PAYROLL · {{group.currency}}</div>
+                <div class="summary-value">{{vm.money(group.totalPayroll, group.currency)}}</div>
+                <div class="summary-note">{{group.employeeCount | number}} employees · average {{vm.money(group.averageSalary, group.currency)}}</div>
+            </article>
+        </section>
+
+        <section class="panel mb-4" aria-labelledby="country-pay-title">
+            <div class="panel-heading">
+                <div>
+                    <h2 id="country-pay-title" class="section-title">Pay by country</h2>
+                    <p class="section-subtitle mb-0">Payroll and average salary stay grouped by currency.</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table data-table mb-0">
+                    <thead><tr><th scope="col">Country</th><th scope="col">Employees</th><th scope="col">Currency</th><th scope="col">Annual payroll</th><th scope="col">Average salary</th></tr></thead>
+                    <tbody>
+                        <tr ng-repeat="group in vm.dashboard.payrollByCountry track by group.country + group.currency">
+                            <td class="fw-semibold">{{group.country}}</td><td>{{group.employeeCount | number}}</td>
+                            <td><span class="currency-tag">{{group.currency}}</span></td>
+                            <td>{{vm.money(group.totalPayroll, group.currency)}}</td>
+                            <td>{{vm.money(group.averageSalary, group.currency)}}</td>
+                        </tr>
+                        <tr ng-if="!vm.dashboard.payrollByCountry.length"><td colspan="5" class="empty-state">No salary data yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="employees-title">
+            <div class="panel-heading employees-heading">
+                <div>
+                    <h2 id="employees-title" class="section-title">Employee records</h2>
+                    <p class="section-subtitle mb-0">{{vm.page.totalElements | number}} records</p>
+                </div>
+                <div class="filters">
+                    <label class="visually-hidden" for="employee-search">Search employees</label>
+                    <input id="employee-search" class="form-control search-input" type="search"
+                           placeholder="Search people, roles…" ng-model="vm.filters.search"
+                           ng-model-options="{debounce: 250}" ng-change="vm.search()">
+                    <label class="visually-hidden" for="country-filter">Filter by country</label>
+                    <select id="country-filter" class="form-select filter-select" ng-model="vm.filters.country"
+                            ng-options="country for country in vm.metadata.countries" ng-change="vm.search()">
+                        <option value="">All countries</option>
+                    </select>
+                    <label class="visually-hidden" for="department-filter">Filter by department</label>
+                    <select id="department-filter" class="form-select filter-select" ng-model="vm.filters.department"
+                            ng-options="department for department in vm.metadata.departments" ng-change="vm.search()">
+                        <option value="">All teams</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table data-table employee-table mb-0">
+                    <thead><tr>
+                        <th scope="col"><button class="sort-button" ng-click="vm.setSort('employeeNumber')">Employee <span ng-if="vm.sort.field === 'employeeNumber'">{{vm.sort.direction === 'asc' ? '↑' : '↓'}}</span></button></th>
+                        <th scope="col"><button class="sort-button" ng-click="vm.setSort('department')">Team <span ng-if="vm.sort.field === 'department'">{{vm.sort.direction === 'asc' ? '↑' : '↓'}}</span></button></th>
+                        <th scope="col">Role</th>
+                        <th scope="col"><button class="sort-button" ng-click="vm.setSort('country')">Country <span ng-if="vm.sort.field === 'country'">{{vm.sort.direction === 'asc' ? '↑' : '↓'}}</span></button></th>
+                        <th scope="col"><button class="sort-button" ng-click="vm.setSort('annualSalary')">Annual salary <span ng-if="vm.sort.field === 'annualSalary'">{{vm.sort.direction === 'asc' ? '↑' : '↓'}}</span></button></th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr></thead>
+                    <tbody>
+                        <tr ng-repeat="employee in vm.page.content track by employee.id">
+                            <td><div class="person-cell"><span class="person-avatar">{{employee.firstName.charAt(0)}}{{employee.lastName.charAt(0)}}</span><span><span class="person-name">{{employee.firstName}} {{employee.lastName}}</span><span class="person-meta">{{employee.employeeNumber}} · {{employee.email}}</span></span></div></td>
+                            <td>{{employee.department}}</td><td>{{employee.jobTitle}}</td><td>{{employee.country}}</td>
+                            <td class="salary-cell">{{vm.money(employee.annualSalary, employee.currency)}} <span class="salary-currency">{{employee.currency}}</span></td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-secondary me-1" type="button" ng-click="vm.openEdit(employee)" aria-label="Edit {{employee.firstName}} {{employee.lastName}}">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" type="button" ng-click="vm.remove(employee)" aria-label="Delete {{employee.firstName}} {{employee.lastName}}">Delete</button>
+                            </td>
+                        </tr>
+                        <tr ng-if="!vm.loading && !vm.page.content.length"><td colspan="6" class="empty-state">No employees match those filters.</td></tr>
+                        <tr ng-if="vm.loading"><td colspan="6" class="empty-state">Loading employee records…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination-row" ng-if="vm.page.totalPages > 0">
+                <span>Showing {{vm.page.number * vm.page.size + 1 | number}}–{{vm.Math.min((vm.page.number + 1) * vm.page.size, vm.page.totalElements) | number}} of {{vm.page.totalElements | number}}</span>
+                <div class="btn-group" role="group" aria-label="Employee pages">
+                    <button class="btn btn-sm btn-outline-secondary" type="button" ng-click="vm.goTo(vm.page.number - 1)" ng-disabled="vm.page.first">Previous</button>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" ng-click="vm.goTo(vm.page.number + 1)" ng-disabled="vm.page.last">Next</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-backdrop-custom" ng-if="vm.modalOpen" ng-click="vm.closeModal()"></div>
+    <section class="employee-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+             ng-if="vm.modalOpen" ng-click="$event.stopPropagation()">
+        <div class="modal-header-custom">
+            <div><div class="eyebrow">{{vm.editing ? 'EMPLOYEE RECORD' : 'NEW RECORD'}}</div><h2 id="modal-title" class="section-title mb-0">{{vm.editing ? 'Edit employee' : 'Add employee'}}</h2></div>
+            <button type="button" class="btn-close" aria-label="Close" ng-click="vm.closeModal()"></button>
+        </div>
+        <form name="employeeForm" ng-submit="vm.save()" novalidate>
+            <div class="modal-body-custom">
+                <div class="alert alert-danger py-2" ng-if="vm.formError">{{vm.formError}}</div>
+                <div class="row g-3">
+                    <div class="col-sm-6"><label class="form-label" for="employee-number">Employee ID</label><input id="employee-number" class="form-control" ng-model="vm.form.employeeNumber" maxlength="20" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="email">Work email</label><input id="email" type="email" class="form-control" ng-model="vm.form.email" maxlength="120" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="first-name">First name</label><input id="first-name" class="form-control" ng-model="vm.form.firstName" maxlength="60" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="last-name">Last name</label><input id="last-name" class="form-control" ng-model="vm.form.lastName" maxlength="60" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="country">Country</label><select id="country" class="form-select" ng-model="vm.form.country" ng-options="country for country in vm.metadata.countries" required><option value="">Select country</option></select></div>
+                    <div class="col-sm-6"><label class="form-label" for="department">Department</label><select id="department" class="form-select" ng-model="vm.form.department" ng-options="department for department in vm.metadata.departments" required><option value="">Select department</option></select></div>
+                    <div class="col-sm-6"><label class="form-label" for="job-title">Job title</label><input id="job-title" class="form-control" ng-model="vm.form.jobTitle" maxlength="100" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="hire-date">Hire date</label><input id="hire-date" type="date" class="form-control" ng-model="vm.form.hireDate" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="salary">Annual salary</label><input id="salary" type="number" min="0.01" step="0.01" class="form-control" ng-model="vm.form.annualSalary" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="currency">Currency</label><select id="currency" class="form-select" ng-model="vm.form.currency" ng-options="currency for currency in vm.metadata.currencies" required><option value="">Select currency</option></select></div>
+                </div>
+            </div>
+            <div class="modal-footer-custom">
+                <button class="btn btn-outline-secondary" type="button" ng-click="vm.closeModal()">Cancel</button>
+                <button class="btn btn-primary px-4" type="submit" ng-disabled="employeeForm.$invalid || vm.saving">{{vm.saving ? 'Saving…' : 'Save employee'}}</button>
+            </div>
+        </form>
+    </section>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

@@ -2,6 +2,26 @@
 
 Small, locally runnable HR salary-record application for a 10,000-person global workforce. See [REQUIREMENTS.md](REQUIREMENTS.md) for goals, scope, and exclusions.
 
+## Project artifacts and approach
+
+- **Requirements:** [REQUIREMENTS.md](REQUIREMENTS.md) captures the goal, HR-manager scope, deliberate exclusions, and success criteria. It was written before implementation.
+- **Architecture:** the diagram below shows the request path. Spring Data JPA performs paging and grouped aggregates in H2; AngularJS calls the REST API and renders the results.
+- **Trade-offs:** Spring Boot 2.7 is used to remain compatible with Java 8. Embedded, in-memory H2 and deterministic sample data make the app easy to run and test, but data is lost on shutdown and this is not a production persistence setup. AngularJS and Bootstrap are loaded from CDNs to avoid a separate frontend build; the UI therefore needs internet access.
+- **Currency correctness:** payroll and average salary are grouped by currency, including in country summaries. The app deliberately does not convert or combine unlike currencies.
+- **Performance:** employee search and filters use database queries with bounded pagination (25 records by default, at most 100 per request), rather than sending the full directory to the browser. Dashboard totals are aggregated by the database. Seed inserts are batched in groups of 500. This is designed for the stated 10,000-record demonstration dataset; no production load benchmark is claimed.
+- **Validation artifacts:** `mvn test` runs focused service unit tests and API integration tests for seed size, search, paging, summaries, CRUD, validation, duplicates, and request bounds.
+- **AI prompts/instructions:** no prompt transcripts or private tool instructions are included in the repository. The requirements document and this implementation summary describe the task scope and engineering decisions.
+
+```mermaid
+flowchart LR
+    HR[HR manager] --> UI[AngularJS + Bootstrap UI]
+    UI --> API[Spring Boot REST API]
+    API --> SVC[Employee service and validation]
+    SVC --> DB[(Embedded H2 database)]
+    DB --> SEED[Deterministic 10,000 employee seed]
+    API --> UI
+```
+
 ## Run
 
 Requires Java 8 or later and Maven 3.6 or later.

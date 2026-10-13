@@ -22,6 +22,27 @@ flowchart LR
     API --> UI
 ```
 
+## Java class guide
+
+Production classes are in `src/main/java/com/acme/salary/`:
+
+- **`SalaryManagementApplication`** — Spring Boot entry point. Starts the application and wires its components.
+- **`Employee`** — JPA entity and API representation of one employee salary record. Declares employee details, salary fields, database constraints, and Bean Validation rules.
+- **`EmployeeRepository`** — Spring Data JPA persistence and query layer. Reads and writes employees, performs filtered paginated search, provides country/department options, checks uniqueness, and calculates grouped payroll summaries in the database.
+- **`EmployeeService`** — business-logic layer between the API and repository. Normalizes identifiers and currency, enforces duplicate checks, coordinates CRUD, and builds dashboard results.
+- **`EmployeeController`** — REST API routes under `/api`. Validates and bounds paging/sorting requests, delegates employee operations to the service, and returns dashboard and metadata responses.
+- **`ApiExceptionHandler`** — converts validation, bad-request, missing-record, and duplicate/conflict exceptions into useful HTTP status codes and JSON error bodies.
+- **`DuplicateEmployeeException`** — explicit domain exception raised when an employee number or email is already in use.
+- **`DashboardSummary`** — response DTO containing overall headcount plus payroll summaries by currency and country.
+- **`SalaryGroupSummary`** — response DTO for one currency or country/currency group, including headcount, total payroll, and average salary.
+- **`EmployeeMetadata`** — response DTO containing the country, department, and currency options used by the UI filters and employee form.
+- **`EmployeeSeedData`** — startup seeder. If the database is empty, generates exactly 10,000 deterministic demo employees and saves them in batches.
+
+Test classes are in `src/test/java/com/acme/salary/`:
+
+- **`EmployeeApiIntegrationTest`** — verifies the application/API end to end, including seed size, search and pagination, salary summaries, CRUD, validation, duplicates, and request bounds.
+- **`EmployeeServiceTest`** — unit tests service behavior in isolation, including normalization, duplicate rejection, search-filter handling, and updates for missing/existing records.
+
 ## Run
 
 Requires Java 8 or later and Maven 3.6 or later.

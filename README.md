@@ -12,6 +12,17 @@ Small, locally runnable HR salary-record application for a 10,000-person global 
 - **Validation artifacts:** `mvn test` runs focused service unit tests and API integration tests for seed size, search, paging, summaries, CRUD, validation, duplicates, and request bounds.
 - **AI prompts/instructions:** no prompt transcripts or private tool instructions are included in the repository. The requirements document and this implementation summary describe the task scope and engineering decisions.
 
+## Engineering principles and evidence
+
+| Principle | How it is applied | Where to verify |
+| --- | --- | --- |
+| Clear thinking and structured problem solving | Define the HR manager's core tasks and measurable success criteria before implementation; separate the initial release from explicitly excluded work. | [REQUIREMENTS.md](REQUIREMENTS.md) |
+| Thoughtful architecture and design | Keep HTTP handling, business rules, persistence, and response models in distinct layers. Push paging and aggregate work into the database; report pay only within its currency. | Architecture diagram below; Java class guide; `EmployeeController`, `EmployeeService`, and `EmployeeRepository` |
+| Clean, maintainable code | Use small, named responsibilities, Bean Validation, bounded request parameters, explicit domain errors, and shared DTOs rather than embedding business logic in UI handlers. | Java class guide and `src/main/java/com/acme/salary/` |
+| Meaningful tests | Cover service rules in isolation and exercise API behavior against a seeded application, including paging limits, validation, CRUD, and currency-safe summaries. | `EmployeeServiceTest` and `EmployeeApiIntegrationTest`; run with `mvn test` |
+| Intentional use of AI tools | AI assistance was used to help implement and document the requested solution. Requirements, explicit trade-offs, and tests make the intended behavior reviewable; prompt transcripts and private tool instructions are not committed. | This README, [REQUIREMENTS.md](REQUIREMENTS.md), and the test classes |
+| Evidence of product thinking | Optimize for an HR manager replacing spreadsheet lookups: searchable records, practical filters, at-a-glance pay summaries, clear exclusions, and a visible warning that the demo is not safe for real employee data. | [REQUIREMENTS.md](REQUIREMENTS.md), dashboard UI, and the security/persistence trade-offs above |
+
 ```mermaid
 flowchart LR
     HR[HR manager] --> UI[AngularJS + Bootstrap UI]
